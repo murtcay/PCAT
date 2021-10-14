@@ -24,7 +24,11 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(fileUpload());
-app.use(methodOverride('_method'));
+app.use(
+  methodOverride('_method', {
+    methods: ['GET', 'POST'],
+  })
+);
 
 // ROUTES
 app.get('/', async (req, res) => {
@@ -70,23 +74,31 @@ app.get('/photos/:id', async (req, res) => {
 });
 
 app.get('/photos/edit/:id', async (req, res) => {
-  const photo = await Photo.findById({
-    _id: req.params.id
-  });
+  const photo = await Photo.findById(req.params.id);
   res.render('edit', {
-    photo: photo
+    photo: photo,
   });
 });
 
 app.put('/photos/:id', async (req, res) => {
-  const photo = await Photo.findById({
-    _id: req.params.id
-  });
+  const photo = await Photo.findById(req.params.id);
+  
   photo.title = req.body.title;
   photo.description = req.body.description;
   photo.save();
 
   res.redirect(`/photos/${req.params.id}`);
+});
+
+app.delete('/photos/:id', async (req, res) => {
+  const photo = await Photo.findById(req.params.id);
+  let filePath = __dirname + '/public' + photo.image;
+
+  fs.unlinkSync(filePath);
+
+  await Photo.findByIdAndDelete(req.params.id);
+
+  res.redirect('/');
 });
 
 app.listen(port, () => {
