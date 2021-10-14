@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const fileUpload = require('express-fileupload');
+const methodOverride = require('method-override');
 const fs = require('fs');
 const ejs = require('ejs');
 const path = require('path');
@@ -12,7 +13,7 @@ const port = 3000;
 // connect DB
 mongoose.connect('mongodb://localhost/pcat-test-db', {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 });
 
 // TEMPALATE ENGINE
@@ -23,13 +24,14 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(fileUpload());
+app.use(methodOverride('_method'));
 
 // ROUTES
 app.get('/', async (req, res) => {
   const photos = await Photo.find({}).sort('-dateCreated');
 
   res.render('index', {
-    photos: photos
+    photos: photos,
   });
 });
 
@@ -42,7 +44,6 @@ app.get('/add-photo', (req, res) => {
 });
 
 app.post('/photos', async (req, res) => {
-
   const uploadDir = 'public/uploads';
 
   if (!fs.existsSync(uploadDir)) {
@@ -55,7 +56,7 @@ app.post('/photos', async (req, res) => {
   req.files.image.mv(uploadPath, async () => {
     await Photo.create({
       ...req.body,
-      image: '/uploads/' + uploadedImage.name
+      image: '/uploads/' + uploadedImage.name,
     });
     res.redirect('/');
   });
@@ -64,8 +65,28 @@ app.post('/photos', async (req, res) => {
 app.get('/photos/:id', async (req, res) => {
   const photo = await Photo.findById(req.params.id);
   res.render('photo', {
+    photo: photo,
+  });
+});
+
+app.get('/photos/edit/:id', async (req, res) => {
+  const photo = await Photo.findById({
+    _id: req.params.id
+  });
+  res.render('edit', {
     photo: photo
   });
+});
+
+app.put('/photos/:id', async (req, res) => {
+  const photo = await Photo.findById({
+    _id: req.params.id
+  });
+  photo.title = req.body.title;
+  photo.description = req.body.description;
+  photo.save();
+
+  res.redirect(`/photos/${req.params.id}`);
 });
 
 app.listen(port, () => {
