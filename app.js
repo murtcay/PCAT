@@ -7,12 +7,16 @@ const photoController = require('./controllers/photoControllers');
 const pageController = require('./controllers/pageController');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 5000;
 
 // connect DB
-mongoose.connect('mongodb://localhost/pcat-test-db', {
+mongoose.connect('************************************', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+}).then(() => {
+  console.log('DB Connected!');
+}).catch((error) => {
+  console.log(error);
 });
 
 // TEMPALATE ENGINE
